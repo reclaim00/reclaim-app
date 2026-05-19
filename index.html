@@ -237,6 +237,27 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 var DB = firebase.firestore();
 
+// ====== CLOUD SYNC (Firestore cross-device) ======
+function syncToFirestore() {
+  if (!AUTH_EMAIL) return;
+  D._lastSync = Date.now();
+  DB.collection('appData').doc(AUTH_EMAIL).set({
+    data: JSON.parse(JSON.stringify(D)),
+    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(function(){});
+}
+
+function loadFromFirestore(callback) {
+  if (!AUTH_EMAIL) { if (callback) callback(null); return; }
+  DB.collection('appData').doc(AUTH_EMAIL).get().then(function(doc) {
+    if (doc.exists && doc.data().data && doc.data().data.joinDate) {
+      callback(doc.data().data);
+    } else {
+      callback(null);
+    }
+  }).catch(function(){ callback(null); });
+}
+
 // ====== AUTH ======
 var AUTH_USER = localStorage.getItem('rc_user') || '';
 var AUTH_EMAIL = localStorage.getItem('rc_email') || '';
@@ -279,6 +300,7 @@ function loadData() {
 
 function saveData() {
   localStorage.setItem(dataKey(), JSON.stringify(D));
+  syncToFirestore();
   applyTheme();
   render();
 }
@@ -526,6 +548,13 @@ function signIn() {
       }
     } catch(e) {}
   }
+  // Try to load cloud data from Firestore (cross-device sync)
+  loadFromFirestore(function(cloudData) {
+    if (cloudData && cloudData.joinDate) {
+      D = cloudData;
+      saveData();
+    }
+  });
   document.body.classList.add('logged-in');
   var isNew = !D.joinDate;
   if (isNew) { D.joinDate = Date.now(); saveData(); }
@@ -4017,6 +4046,13 @@ if (AUTH_USER) {
     showLockScreen();
   } else {
     render();
+    // Try to pull cloud data (cross-device sync)
+    loadFromFirestore(function(cloudData) {
+      if (cloudData && cloudData.joinDate) {
+        D = cloudData;
+        saveData();
+      }
+    });
   }
 } else {
   showSignIn();
