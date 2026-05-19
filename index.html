@@ -2115,17 +2115,16 @@ function showSOS() {
     {name:'Self-Harm Hotline',num:'1-800-366-8288',desc:'Self-harm crisis support'},
     {name:'Warmline (Non-crisis)',num:'1-888-448-9777',desc:'Peer support for non-crisis moments'}
   ];
+  function helplinesHTML() {
+    var hh = '';
+    for (var i=0;i<helplines.length;i++) {
+      hh += '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-weight:600;font-size:13px">'+helplines[i].name+'</div><div style="font-size:11px;color:var(--muted)">'+helplines[i].desc+'</div></div><a href="tel:'+helplines[i].num+'" style="font-size:16px;font-weight:700;color:var(--primary);text-decoration:none">'+helplines[i].num+'</a></div>';
+    }
+    return hh;
+  }
   var h = '<div class="overlay-content" style="text-align:center"><div style="font-size:52px;font-weight:900;color:var(--danger);margin-bottom:4px;letter-spacing:8px">SOS</div><h3 style="font-size:20px;font-weight:700;color:var(--danger)">You are not alone.</h3><p style="font-size:14px;color:var(--muted);margin:8px 0 16px">Reach out. Help is available 24/7.</p><div style="text-align:left">';
-  var showCount = 4;
-  for (var i=0;i<Math.min(showCount, helplines.length);i++) {
-    h += '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-weight:600;font-size:13px">'+helplines[i].name+'</div><div style="font-size:11px;color:var(--muted)">'+helplines[i].desc+'</div></div><a href="tel:'+helplines[i].num+'" style="font-size:16px;font-weight:700;color:var(--primary);text-decoration:none">'+helplines[i].num+'</a></div>';
-  }
-  h += '<div id="sos-more-helplines" style="display:none">';
-  for (var i=showCount;i<helplines.length;i++) {
-    h += '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-weight:600;font-size:13px">'+helplines[i].name+'</div><div style="font-size:11px;color:var(--muted)">'+helplines[i].desc+'</div></div><a href="tel:'+helplines[i].num+'" style="font-size:16px;font-weight:700;color:var(--primary);text-decoration:none">'+helplines[i].num+'</a></div>';
-  }
-  h += '</div>';
-  h += '<button class="btn btn-sm btn-outline" onclick="var el=document.getElementById(\'sos-more-helplines\');var btn=this;if(el.style.display===\'none\'){el.style.display=\'block\';btn.textContent=\'Show Less\';}else{el.style.display=\'none\';btn.textContent=\'Show All ' + helplines.length + ' Helplines\';}" style="margin-top:4px;width:auto">Show All ' + helplines.length + ' Helplines</button>';
+  h += '<div class="card" style="cursor:pointer;padding:12px;margin:6px 0" onclick="var b=document.getElementById(\'sos-breathe-body\');var i=this.querySelector(\'.toggle-icon\');if(b.style.display===\'none\'){b.style.display=\'block\';i.textContent=\'&#9660;\'}else{b.style.display=\'none\';i.textContent=\'&#9654;\'}"><div style="display:flex;justify-content:space-between;align-items:center"><strong>&#128166; Breathe</strong><span class="toggle-icon">&#9654;</span></div><div id="sos-breathe-body" style="display:none;margin-top:10px;text-align:center"><div style="font-size:13px;color:var(--muted);margin-bottom:8px">A quick guided breathing exercise to calm your nervous system.</div><button class="btn btn-primary btn-sm" onclick="this.closest(\'.overlay\').remove();setTimeout(function(){startBreathe()},100)" style="width:auto">Start Breathing Exercise</button></div></div>';
+  h += '<div class="card" style="cursor:pointer;padding:12px;margin:6px 0" onclick="var b=document.getElementById(\'sos-helplines-body\');var i=this.querySelector(\'.toggle-icon\');if(b.style.display===\'none\'){b.style.display=\'block\';i.textContent=\'&#9660;\'}else{b.style.display=\'none\';i.textContent=\'&#9654;\'}"><div style="display:flex;justify-content:space-between;align-items:center"><strong>&#128222; Crisis Helplines</strong><span class="toggle-icon">&#9654;</span></div><div id="sos-helplines-body" style="display:none;margin-top:8px">' + helplinesHTML() + '</div></div>';
   h += '</div><button class="btn btn-outline" onclick="this.closest(\'.overlay\').remove()" style="margin-top:12px">Close</button></div>';
   D.sosUsed = true;
   overlay.innerHTML = h;
