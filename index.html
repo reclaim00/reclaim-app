@@ -196,7 +196,7 @@ body.dark .profile-btn-float{background:var(--card);color:var(--text);border-col
 <div class="top-bar">
   <div style="font-size:18px;font-weight:800;color:var(--primary);letter-spacing:-0.5px">Re.<span style="color:var(--primary)">Claim</span></div>
   <div style="display:flex;gap:8px">
-    <button class="sos-btn-float" onclick="showSOS()" title="SOS - Get help now">&#128663;</button>
+    <button class="sos-btn-float" onclick="showSOS()" title="SOS - Get help now" style="font-size:12px;font-weight:900;letter-spacing:1px">SOS</button>
     <button class="profile-btn-float" onclick="goTo('profile')" title="Profile">&#128100;</button>
   </div>
 </div>
@@ -2115,7 +2115,7 @@ function showSOS() {
     {name:'Self-Harm Hotline',num:'1-800-366-8288',desc:'Self-harm crisis support'},
     {name:'Warmline (Non-crisis)',num:'1-888-448-9777',desc:'Peer support for non-crisis moments'}
   ];
-  var h = '<div class="overlay-content" style="text-align:center"><div style="font-size:64px;margin-bottom:8px">&#128663;</div><h3 style="font-size:20px;font-weight:700;color:var(--danger)">You are not alone.</h3><p style="font-size:14px;color:var(--muted);margin:8px 0 16px">Reach out. Help is available 24/7.</p><div style="text-align:left">';
+  var h = '<div class="overlay-content" style="text-align:center"><div style="font-size:52px;font-weight:900;color:var(--danger);margin-bottom:4px;letter-spacing:8px">SOS</div><h3 style="font-size:20px;font-weight:700;color:var(--danger)">You are not alone.</h3><p style="font-size:14px;color:var(--muted);margin:8px 0 16px">Reach out. Help is available 24/7.</p><div style="text-align:left">';
   var showCount = 4;
   for (var i=0;i<Math.min(showCount, helplines.length);i++) {
     h += '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-weight:600;font-size:13px">'+helplines[i].name+'</div><div style="font-size:11px;color:var(--muted)">'+helplines[i].desc+'</div></div><a href="tel:'+helplines[i].num+'" style="font-size:16px;font-weight:700;color:var(--primary);text-decoration:none">'+helplines[i].num+'</a></div>';
