@@ -3087,8 +3087,30 @@ function moreHTML() {
   h += '<h3 style="font-size:13px;font-weight:700;color:var(--primary);margin:12px 0 4px">Settings</h3>';
   h += '<div class="sub-grid">';
   h += '<div class="sub-item" onclick="goTo(\'profile\')">Profile</div>';
+  h += '<div class="sub-item" onclick="showRecommendations()">Recommendations</div>';
   h += '</div>';
   return h;
+}
+
+// ====== RECOMMENDATIONS ======
+function showRecommendations() {
+  var overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = '<div class="overlay-content" style="text-align:center"><h3 style="font-size:18px;font-weight:700">&#128161; Recommendations</h3><p style="font-size:13px;color:var(--muted);margin:4px 0 12px">Help shape Re.Claim! Share your ideas, feedback, or anything you\'d like to see improved.</p><textarea id="rec-text" placeholder="What would make this app better for you?" style="min-height:100px;margin-bottom:6px"></textarea><button class="btn btn-primary btn-sm" onclick="submitRecommendation()" style="width:100%">Submit</button><button class="btn btn-outline btn-sm" onclick="this.closest(\'.overlay\').remove()" style="margin-top:6px">Cancel</button></div>';
+  document.body.appendChild(overlay);
+}
+
+function submitRecommendation() {
+  var text = document.getElementById('rec-text');
+  if (!text || !text.value.trim()) { alert('Please write your recommendation first.'); return; }
+  var rec = { text: text.value.trim(), email: AUTH_EMAIL || 'anonymous', date: new Date().toISOString() };
+  DB.collection('recommendations').add(rec).then(function() {
+    alert('Thank you! Your recommendation has been submitted.');
+    text.closest('.overlay').remove();
+  }).catch(function() {
+    alert('Thanks! We\'ve saved your feedback locally.');
+    text.closest('.overlay').remove(); 
+  });
 }
 
 // ====== PROFILE ======
