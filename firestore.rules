@@ -1,46 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // User profiles — only the account owner
-    match /users/{email} {
-      allow read, write: if request.auth != null && request.auth.token.email == email;
-    }
-
-    // App data (journal, moods, etc.) — only the account owner
-    match /appData/{email} {
-      allow read, write: if request.auth != null && request.auth.token.email == email;
-    }
-
-    // Pairing codes — owner writes, any authenticated user reads (to find buddies)
-    match /pairingCodes/{email} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.token.email == email;
-    }
-
-    // Buddy progress — owner writes, any authenticated user reads
-    match /progress/{email} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.token.email == email;
-    }
-
-    // Messages — user can read their own conversations and send as themselves
-    match /messages/{docId} {
-      allow read: if request.auth != null && (resource.data.from == request.auth.token.email || resource.data.to == request.auth.token.email);
-      allow create: if request.auth != null && request.resource.data.from == request.auth.token.email;
-      allow update, delete: if false;
-    }
-
-    // Recommendations — any authenticated user can submit
-    match /recommendations/{doc} {
-      allow create: if request.auth != null;
-      allow read: if request.auth != null;
-      allow update, delete: if false;
-    }
-
-    // Deny everything else
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 }

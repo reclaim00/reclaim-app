@@ -225,7 +225,7 @@ body.dark .profile-btn-float{background:var(--card);color:var(--text);border-col
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
 // ====== FIREBASE ======
@@ -240,7 +240,6 @@ var firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 var DB = firebase.firestore();
-var AUTH = firebase.auth();
 
 // ====== CLOUD SYNC (Firestore cross-device) ======
 function syncToFirestore() {
@@ -358,7 +357,7 @@ function showLockScreen() {
     '<input class="si-input" type="password" id="lock-pin-input" placeholder="Enter passcode" inputmode="numeric" maxlength="6" style="text-align:center;font-size:24px;letter-spacing:8px;font-weight:700" onkeydown="if(event.key===\'Enter\')unlockApp()">' +
     '<button class="si-btn" onclick="unlockApp()">Unlock</button>' +
     '<div id="lock-error" style="font-size:12px;color:var(--danger);margin-top:4px"></div>' +
-    '<button class="btn btn-outline btn-sm" onclick="if(confirm(\'This will erase all local data and let you sign in again.\')){localStorage.removeItem(\'rc_lock_hash\');localStorage.removeItem(\'rc_lock_salt\');localStorage.removeItem(\'rc_user\');localStorage.removeItem(\'rc_email\');sessionStorage.clear();authSignOut()}" style="margin-top:12px;width:auto;display:inline-flex">Reset &amp; Sign Out</button>' +
+    '<button class="btn btn-outline btn-sm" onclick="if(confirm(\'This will erase all local data and let you sign in again.\')){localStorage.removeItem(\'rc_lock_hash\');localStorage.removeItem(\'rc_lock_salt\');localStorage.removeItem(\'rc_user\');localStorage.removeItem(\'rc_email\');sessionStorage.clear();location.reload()}" style="margin-top:12px;width:auto;display:inline-flex">Reset &amp; Sign Out</button>' +
     '</div></div>';
   document.getElementById('tabs').style.display = 'none';
   var tb = document.querySelector('.top-bar');
@@ -531,66 +530,35 @@ function safetyPlanHTML() {
 
 function normId(id) { return id.toLowerCase().trim(); }
 
-function handleAuth() {
-  if (!AUTH || !firebase.auth) { alert('Firebase Auth is still loading. Please wait a moment and try again.'); return; }
+function signIn() {
   var email = document.getElementById('si-email');
-  var password = document.getElementById('si-password');
-  var error = document.getElementById('si-error');
   if (!email || !email.value || !email.value.includes('@')) { alert('Enter a valid email.'); return; }
-  if (!password || !password.value || password.value.length < 6) { alert('Password must be at least 6 characters.'); return; }
-  if (error) error.textContent = '';
-  var isSignUp = SIGN_IN_MODE === 'up';
-  var fn = isSignUp ? AUTH.createUserWithEmailAndPassword : AUTH.signInWithEmailAndPassword;
-  fn(email.value.trim(), password.value).then(function(cred) {
-    var user = cred.user;
-    AUTH_USER = normId(user.email);
-    AUTH_EMAIL = user.email;
-    localStorage.setItem('rc_user', user.email);
-    localStorage.setItem('rc_email', user.email);
-    D = loadData();
-    loadFromFirestore(function(cloudData) {
-      if (cloudData && cloudData.joinDate) {
-        D = cloudData;
-        saveData();
-      }
-    });
-    document.body.classList.add('logged-in');
-    var isNew = !D.joinDate;
-    if (isNew) { D.joinDate = Date.now(); saveData(); }
-    registerCurrentUser();
-    render();
-    if (isNew || !D.assessmentTaken) {
-      setTimeout(function(){ showAssessmentAfterSignIn(); }, 600);
-    }
-  }).catch(function(err) {
-    if (error) error.textContent = err.message;
-    else alert(err.message);
-  });
+  var rawId = email.value.trim();
+  var id = normId(rawId);
+  AUTH_USER = id;
+  AUTH_EMAIL = id;
+  localStorage.setItem('rc_user', id);
+  localStorage.setItem('rc_email', id);
+  D = loadData();
+  if (!D.joinDate && rawId !== id) {
+    var oldKey = 'rc_data_' + rawId.replace(/[^a-zA-Z0-9_-]/g,'');
+    try { var oldData = JSON.parse(localStorage.getItem(oldKey)); if (oldData && oldData.joinDate) { D = oldData; localStorage.setItem(dataKey(), JSON.stringify(D)); localStorage.removeItem(oldKey); } } catch(e) {}
+  }
+  loadFromFirestore(function(cloudData) { if (cloudData && cloudData.joinDate) { D = cloudData; saveData(); } });
+  document.body.classList.add('logged-in');
+  var isNew = !D.joinDate;
+  if (isNew) { D.joinDate = Date.now(); saveData(); }
+  registerCurrentUser();
+  render();
+  if (isNew || !D.assessmentTaken) { setTimeout(function(){ showAssessmentAfterSignIn(); }, 600); }
 }
 
-function resetPassword() {
-  var email = document.getElementById('si-email');
-  if (!email || !email.value || !email.value.includes('@')) { alert('Enter your email first, then click Forgot Password.'); return; }
-  AUTH.sendPasswordResetEmail(email.value.trim()).then(function() {
-    alert('Password reset email sent! Check your inbox.');
-  }).catch(function(err) {
-    alert(err.message);
-  });
-}
-
-function authSignOut() {
-  AUTH.signOut().then(function() {
-    AUTH_USER = '';
-    AUTH_EMAIL = '';
-    LOCK_ENABLED = false;
-    if (SOBER_TIMER_ID) { clearInterval(SOBER_TIMER_ID); SOBER_TIMER_ID = null; }
-    if (SOBER_TIMEOUT_ID) { clearTimeout(SOBER_TIMEOUT_ID); SOBER_TIMEOUT_ID = null; }
-    localStorage.removeItem('rc_user');
-    localStorage.removeItem('rc_email');
-    D = defaultData();
-    document.body.classList.remove('logged-in');
-    showSignIn();
-  }).catch(function(){});
+function signOut() {
+  AUTH_USER = ''; AUTH_EMAIL = ''; LOCK_ENABLED = false;
+  if (SOBER_TIMER_ID) { clearInterval(SOBER_TIMER_ID); SOBER_TIMER_ID = null; }
+  if (SOBER_TIMEOUT_ID) { clearTimeout(SOBER_TIMEOUT_ID); SOBER_TIMEOUT_ID = null; }
+  localStorage.removeItem('rc_user'); localStorage.removeItem('rc_email');
+  D = defaultData(); document.body.classList.remove('logged-in'); showSignIn();
 }
 
 // ====== THEME ======
@@ -617,10 +585,8 @@ function showSignIn() {
     '<div class="si-divider"><div></div>Sign in with email or phone<div></div></div>' +
     '<div id="si-email-mode">' +
     '<input class="si-input" type="email" id="si-email" placeholder="your@email.com">' +
-    '<input class="si-input" type="password" id="si-password" placeholder="Password (min 6 chars)" onkeydown="if(event.key===\'Enter\')handleAuth()">' +
-    '<button class="si-btn" onclick="handleAuth()"><span id="si-btn-label">Sign In</span></button>' +
-    '<div style="text-align:center;margin-top:8px"><a href="#" onclick="resetPassword();return false" id="si-reset-link" style="font-size:12px;color:var(--primary);text-decoration:none;font-weight:500">Forgot password?</a> &middot; <a href="#" onclick="togglePhoneMode();return false" id="si-toggle-phone-link" style="font-size:12px;color:var(--primary);text-decoration:none;font-weight:500">Use phone instead</a></div>' +
-    '<div id="si-error" style="font-size:12px;color:var(--danger);margin-top:6px;text-align:center"></div>' +
+    '<button class="si-btn" onclick="signIn()"><span id="si-btn-label">Sign In</span></button>' +
+    '<div style="text-align:center;margin-top:8px"><a href="#" onclick="togglePhoneMode();return false" id="si-toggle-phone-link" style="font-size:12px;color:var(--primary);text-decoration:none;font-weight:500">Use phone number instead</a></div>' +
     '</div>' +
     '<div id="si-phone-mode" style="display:none">' +
     '<input class="si-input" type="tel" id="si-phone" placeholder="+1 (555) 123-4567" oninput="this.value=this.value.replace(/[^0-9+\\-() ]/g,\'\')">' +
@@ -3177,7 +3143,7 @@ function profileHTML() {
   h += '<p style="font-size:10px;color:var(--muted);margin-top:2px">Morning: "Set your intention and log your mood" &middot; Evening: "Journal what happened and how you feel"</p>';
   h += '<button class="btn btn-outline btn-sm" onclick="exportData()" style="margin-top:8px">Export My Data</button>';
   h += '<button class="btn btn-outline btn-sm" onclick="importData()" style="margin-top:6px">Import Data</button>';
-  if (AUTH_USER) h += '<button class="btn btn-danger btn-sm" onclick="authSignOut()" style="margin-top:6px">Sign Out</button>';
+  if (AUTH_USER) h += '<button class="btn btn-danger btn-sm" onclick="signOut()" style="margin-top:6px">Sign Out</button>';
   h += '</div>';
   h += '<div class="card"><h3>About Re.Claim</h3><p style="font-size:13px;color:var(--muted);line-height:1.5">Re.Claim is your recovery & wellness companion. Track mood & habits, journal, practice self-care, reflect on journal entries with Arthur, monitor sobriety, take assessments, read articles, find music, view weekly reports, and connect with an accountability partner. Your journal, moods & habits stay on your device. Buddy features sync via Firebase Firestore.</p></div>';
   return h;
@@ -4095,30 +4061,19 @@ document.getElementById('tabs').addEventListener('click', function(e) {
 
 // ====== INIT ======
 applyTheme();
-// Show a brief loading state while Firebase Auth resolves
-document.getElementById('app').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:80vh;font-size:14px;color:var(--muted)">Loading...</div>';
-AUTH.onAuthStateChanged(function(user) {
-  if (user) {
-    AUTH_USER = normId(user.email);
-    AUTH_EMAIL = user.email;
-    localStorage.setItem('rc_user', user.email);
-    localStorage.setItem('rc_email', user.email);
-    D = loadData();
-    document.body.classList.add('logged-in');
-    if (isLockSet()) {
-      showLockScreen();
-    } else {
-      render();
-      loadFromFirestore(function(cloudData) {
-        if (cloudData && cloudData.joinDate) { D = cloudData; saveData(); }
-      });
-    }
+if (AUTH_USER) {
+  document.body.classList.add('logged-in');
+  if (isLockSet()) {
+    showLockScreen();
   } else {
-    AUTH_USER = '';
-    AUTH_EMAIL = '';
-    showSignIn();
+    render();
+    loadFromFirestore(function(cloudData) {
+      if (cloudData && cloudData.joinDate) { D = cloudData; saveData(); }
+    });
   }
-});
+} else {
+  showSignIn();
+}
 </script>
 </body>
 </html>
