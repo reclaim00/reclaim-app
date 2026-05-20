@@ -570,12 +570,15 @@ function completeSignIn(id) {
   AUTH_USER = id; AUTH_EMAIL = id;
   localStorage.setItem('rc_user', id); localStorage.setItem('rc_email', id);
   D = loadData();
-  loadFromFirestore(function(cloudData) { if (cloudData && cloudData.joinDate) { D = cloudData; saveData(); } });
   document.body.classList.add('logged-in');
   var isNew = !D.joinDate;
   if (isNew) { D.joinDate = Date.now(); saveData(); }
-  registerCurrentUser(); render();
-  if (isNew || !D.assessmentTaken) { setTimeout(function(){ showAssessmentAfterSignIn(); }, 600); }
+  registerCurrentUser();
+  loadFromFirestore(function(cloudData) {
+    if (cloudData && cloudData.joinDate) { D = cloudData; saveData(); }
+    render();
+    if (!D.assessmentTaken) { setTimeout(function(){ showAssessmentAfterSignIn(); }, 600); }
+  });
 }
 
 function signOut() {
@@ -685,22 +688,7 @@ function verifyPhoneCode() {
   if (codeInput.value.trim() !== PHONE_VERIFICATION_CODE) { alert('Incorrect code. Please try again.'); return; }
   var phone = document.getElementById('si-phone').value.trim();
   var id = normId(phone.replace(/[^0-9]/g,''));
-  AUTH_USER = id;
-  AUTH_EMAIL = phone;
-  localStorage.setItem('rc_user', phone);
-  localStorage.setItem('rc_email', phone);
-  D = loadData();
-  loadFromFirestore(function(cloudData) {
-    if (cloudData && cloudData.joinDate) { D = cloudData; saveData(); }
-  });
-  document.body.classList.add('logged-in');
-  var isNew = !D.joinDate;
-  if (isNew) { D.joinDate = Date.now(); saveData(); }
-  registerCurrentUser();
-  render();
-  if (isNew || !D.assessmentTaken) {
-    setTimeout(function(){ showAssessmentAfterSignIn(); }, 600);
-  }
+  completeSignIn(id);
 }
 
 // ====== SOBRIETY / PLANT ======
