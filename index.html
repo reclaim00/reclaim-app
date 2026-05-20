@@ -224,7 +224,9 @@ body.dark .profile-btn-float{background:var(--card);color:var(--text);border-col
    </button>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
 // ====== FIREBASE ======
 var firebaseConfig = {
@@ -530,6 +532,7 @@ function safetyPlanHTML() {
 function normId(id) { return id.toLowerCase().trim(); }
 
 function handleAuth() {
+  if (!AUTH || !firebase.auth) { alert('Firebase Auth is still loading. Please wait a moment and try again.'); return; }
   var email = document.getElementById('si-email');
   var password = document.getElementById('si-password');
   var error = document.getElementById('si-error');
