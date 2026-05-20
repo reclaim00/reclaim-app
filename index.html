@@ -530,26 +530,51 @@ function safetyPlanHTML() {
 
 function normId(id) { return id.toLowerCase().trim(); }
 
-function signIn() {
+function sha256(str) {
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function(hash){
+    return Array.from(new Uint8Array(hash)).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+  });
+}
+
+async function handleAuth() {
   var email = document.getElementById('si-email');
+  var password = document.getElementById('si-password');
+  var error = document.getElementById('si-error');
   if (!email || !email.value || !email.value.includes('@')) { alert('Enter a valid email.'); return; }
-  var rawId = email.value.trim();
-  var id = normId(rawId);
-  AUTH_USER = id;
-  AUTH_EMAIL = id;
-  localStorage.setItem('rc_user', id);
-  localStorage.setItem('rc_email', id);
-  D = loadData();
-  if (!D.joinDate && rawId !== id) {
-    var oldKey = 'rc_data_' + rawId.replace(/[^a-zA-Z0-9_-]/g,'');
-    try { var oldData = JSON.parse(localStorage.getItem(oldKey)); if (oldData && oldData.joinDate) { D = oldData; localStorage.setItem(dataKey(), JSON.stringify(D)); localStorage.removeItem(oldKey); } } catch(e) {}
+  if (!password || !password.value || password.value.length < 4) { alert('Password must be at least 4 characters.'); return; }
+  if (error) error.textContent = '';
+  var em = normId(email.value.trim());
+  var pw = password.value;
+  var isSignUp = SIGN_IN_MODE === 'up';
+  
+  if (isSignUp) {
+    var salt = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(function(b){return b.toString(16).padStart(2,'0')}).join('');
+    var hash = await sha256(pw + ':' + salt);
+    DB.collection('accounts').doc(em).get().then(function(doc) {
+      if (doc.exists) { if (error) error.textContent = 'Email already registered. Sign in instead.'; return; }
+      DB.collection('accounts').doc(em).set({salt:salt, hash:hash}).then(function(){ completeSignIn(em); }).catch(function(err){ if (error) error.textContent = err.message; });
+    }).catch(function(err){ if (error) error.textContent = err.message; });
+  } else {
+    DB.collection('accounts').doc(em).get().then(function(doc) {
+      if (!doc.exists) { if (error) error.textContent = 'No account found. Sign up first.'; return; }
+      var a = doc.data();
+      sha256(pw + ':' + a.salt).then(function(check) {
+        if (check === a.hash) { completeSignIn(em); }
+        else { if (error) error.textContent = 'Incorrect password.'; }
+      });
+    }).catch(function(err){ if (error) error.textContent = err.message; });
   }
+}
+
+function completeSignIn(id) {
+  AUTH_USER = id; AUTH_EMAIL = id;
+  localStorage.setItem('rc_user', id); localStorage.setItem('rc_email', id);
+  D = loadData();
   loadFromFirestore(function(cloudData) { if (cloudData && cloudData.joinDate) { D = cloudData; saveData(); } });
   document.body.classList.add('logged-in');
   var isNew = !D.joinDate;
   if (isNew) { D.joinDate = Date.now(); saveData(); }
-  registerCurrentUser();
-  render();
+  registerCurrentUser(); render();
   if (isNew || !D.assessmentTaken) { setTimeout(function(){ showAssessmentAfterSignIn(); }, 600); }
 }
 
@@ -585,7 +610,9 @@ function showSignIn() {
     '<div class="si-divider"><div></div>Sign in with email or phone<div></div></div>' +
     '<div id="si-email-mode">' +
     '<input class="si-input" type="email" id="si-email" placeholder="your@email.com">' +
-    '<button class="si-btn" onclick="signIn()"><span id="si-btn-label">Sign In</span></button>' +
+    '<input class="si-input" type="password" id="si-password" placeholder="Password" onkeydown="if(event.key===\'Enter\')handleAuth()">' +
+    '<div id="si-error" style="font-size:12px;color:var(--danger);margin:4px 0;text-align:center"></div>' +
+    '<button class="si-btn" onclick="handleAuth()"><span id="si-btn-label">Sign In</span></button>' +
     '<div style="text-align:center;margin-top:8px"><a href="#" onclick="togglePhoneMode();return false" id="si-toggle-phone-link" style="font-size:12px;color:var(--primary);text-decoration:none;font-weight:500">Use phone number instead</a></div>' +
     '</div>' +
     '<div id="si-phone-mode" style="display:none">' +
