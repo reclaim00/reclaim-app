@@ -224,7 +224,9 @@ body.dark .profile-btn-float{background:var(--card);color:var(--text);border-col
    </button>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
 // ====== FIREBASE ======
 var firebaseConfig = {
@@ -236,9 +238,9 @@ var firebaseConfig = {
   appId: "1:252489457973:web:6d785afa4c32b3374c2c7c",
   measurementId: "G-J1J62RQ93Y"
 };
-var app = firebase.initializeApp(firebaseConfig);
-var DB = firebase.firestore(app);
-var AUTH = firebase.auth(app);
+firebase.initializeApp(firebaseConfig);
+var DB = firebase.firestore();
+var AUTH = firebase.auth();
 
 // ====== CLOUD SYNC (Firestore cross-device) ======
 function syncToFirestore() {
