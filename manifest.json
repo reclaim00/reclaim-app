@@ -1,0 +1,14 @@
+{
+  "name": "Re.Claim - Recovery & Wellness",
+  "short_name": "Re.Claim",
+  "description": "Your recovery and wellness companion. Track sobriety, mood, habits, journal with AI, and more.",
+  "start_url": "/reclaim-app/",
+  "display": "standalone",
+  "background_color": "#f0f7f4",
+  "theme_color": "#059669",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon.svg", "sizes": "512x512", "type": "image/svg+xml" },
+    { "src": "icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

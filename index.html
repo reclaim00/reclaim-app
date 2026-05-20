@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#059669">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <title>Re.Claim</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -3959,6 +3962,13 @@ function requestNotif() {
   if (!("Notification" in window)) return;
   if (Notification.permission === "default") Notification.requestPermission();
 }
+function swNotify(title, body, icon, tag) {
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({type:'show-notification',title:title,body:body,icon:icon,tag:tag});
+  } else {
+    try { new Notification(title, {body:body,icon:icon,tag:tag}); } catch(e) {}
+  }
+}
 function checkNotifications() {
   if (!("Notification" in window) || Notification.permission !== "granted") return;
   var n = D.notifications || {morning:false,evening:false,morningTime:'08:00',eveningTime:'20:00'};
@@ -3966,17 +3976,24 @@ function checkNotifications() {
   var hm = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   var s = D.streak || 0;
   if (n.morning && hm === n.morningTime && !D._notifiedMorning) {
-    new Notification('Re.Claim Morning', {body: s > 0 ? 'Day ' + s + '! Log your mood and set your intention.' : 'Log your mood and set your intention for today.', icon:'https://emojicdn.elk.sh/%F0%9F%8C%B1'});
+    swNotify('Re.Claim Morning', s > 0 ? 'Day ' + s + '! Log your mood and set your intention.' : 'Log your mood and set your intention for today.', 'https://emojicdn.elk.sh/%F0%9F%8C%B1', 'reclaim-morning');
     D._notifiedMorning = true; D._notifiedEvening = false;
   }
   if (n.evening && hm === n.eveningTime && !D._notifiedEvening) {
-    new Notification('Re.Claim Evening', {body: s > 0 ? 'Day ' + s + ' made it! Journal what happened today.' : 'Journal what happened and how you feel today.', icon:'https://emojicdn.elk.sh/%F0%9F%8C%99'});
+    swNotify('Re.Claim Evening', s > 0 ? 'Day ' + s + ' made it! Journal what happened today.' : 'Journal what happened and how you feel today.', 'https://emojicdn.elk.sh/%F0%9F%8C%99', 'reclaim-evening');
     D._notifiedEvening = true; D._notifiedMorning = false;
   }
   // Reset flags at midnight
   if (hm === '00:01') { D._notifiedMorning = false; D._notifiedEvening = false; }
 }
 setInterval(checkNotifications, 60000);
+
+// ====== SERVICE WORKER ======
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
 
 // ====== RENDER & NAV ======
 var MORE_SUB_PAGES = ['journal','letters','calendar','library','music','reports','buddy','coping','assessment','profile','safety'];
